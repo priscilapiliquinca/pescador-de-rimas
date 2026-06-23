@@ -1,0 +1,190 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Pesca das Rimas 🐟</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #f0f2f6;
+            color: #31333f;
+            max-width: 700px;
+            margin: 0 auto;
+            padding: 20px;
+            text-align: center;
+        }
+        h1 { color: #ff4b4b; margin-bottom: 5px; }
+        h3 { color: #555; margin-top: 0; font-weight: normal; }
+        .info-box {
+            background-color: #e3f2fd;
+            padding: 15px;
+            border-radius: 8px;
+            color: #0d47a1;
+            margin-bottom: 20px;
+            font-weight: 500;
+        }
+        .grid-peixes {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
+        }
+        button {
+            background-color: #007bff;
+            color: white;
+            border: none;
+            border-radius: 10px;
+            padding: 15px;
+            font-size: 18px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+        button:hover { background-color: #0056b3; }
+        .palavra-box {
+            background-color: #e3f2fd;
+            padding: 20px;
+            border-radius: 15px;
+            border: 3px dashed #1e90ff;
+            font-size: 50px;
+            font-weight: bold;
+            color: #0d47a1;
+            margin-bottom: 20px;
+        }
+        .tempo-texto { font-size: 35px; color: #ff4b4b; font-weight: bold; margin: 10px 0; }
+        .pontos-texto { font-size: 25px; color: #28a745; font-weight: bold; margin: 10px 0; }
+        input[type="text"] {
+            width: 80%;
+            padding: 12px;
+            font-size: 18px;
+            border: 2px solid #ccc;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            outline: none;
+        }
+        input[type="text"]:focus { border-color: #007bff; }
+        .rimas-aceitas {
+            background-color: #f1f3f5;
+            padding: 15px;
+            border-radius: 8px;
+            border-left: 5px solid #007bff;
+            text-align: left;
+            font-size: 18px;
+        }
+        .btn-voltar { background-color: #28a745; margin-top: 20px; }
+        .btn-voltar:hover { background-color: #218838; }
+    </style>
+</head>
+<body>
+
+    <h1>🐟 Jogo da Pesca: Rimas</h1>
+    <h3>Professoras Priscila e Fabíula</h3>
+    <hr style="border: 0; height: 1px; background: #ccc; margin-bottom: 20px;">
+
+    <!-- TELA DE SELEÇÃO -->
+    <div id="tela-selecao">
+        <div class="info-box">O aluno pescou! Escolha o peixe correspondente:</div>
+        <div class="grid-peixes" id="lista-peixes"></div>
+    </div>
+
+    <!-- TELA DO JOGO -->
+    <div id="tela-jogo" style="display: none;">
+        <div class="palavra-box" id="palavra-alvo"></div>
+        <p class="tempo-texto" id="cronometro">⏳ 90s</p>
+        <p class="pontos-texto" id="placar">⭐ Pontos: 0</p>
+        
+        <label style="display:block; margin-bottom:8px; font-weight:bold;">Digite a rima e dê ENTER:</label>
+        <input type="text" id="campo-rima" placeholder="Digite aqui..." autocomplete="off">
+        
+        <div style="text-align: left; font-weight: bold; margin-bottom: 5px;">Rimas aceitas:</div>
+        <div class="rimas-aceitas" id="box-rimas">Aguardando rimas...</div>
+    </div>
+
+    <!-- TELA DE FIM -->
+    <div id="tela-fim" style="display: none;">
+        <h2 style="color: #ff4b4b; font-size: 40px;">⏰ Fim do Tempo!</h2>
+        <div class="info-box" id="resultado-final" style="font-size: 22px; background-color: #d4edda; color: #155724;"></div>
+        <button class="btn-voltar" onclick="voltarInicio()">Voltar para o Início</button>
+    </div>
+
+    <script>
+        const peixes = {
+            "1": "Mão", "2": "Escola", "3": "Amor", "4": "Cantar", "5": "Janela",
+            "6": "Gato", "7": "Alegria", "8": "Papel", "9": "Dente", "10": "Chuva"
+        };
+
+        let palavraAlvo = "";
+        let pontos = 0;
+        let rimasAceitas = [];
+        let tempoRestante = 90;
+        let cronometroInterval;
+
+        // Montar botões dos peixes
+        const listaPeixes = document.getElementById("lista-peixes");
+        Object.entries(peixes).forEach(([num, palavra]) => {
+            const btn = document.createElement("button");
+            btn.innerText = `Peixe ${num}: ${palavra}`;
+            btn.onclick = () => iniciarJogo(palavra);
+            listaPeixes.appendChild(btn);
+        });
+
+        function iniciarJogo(palavra) {
+            palavraAlvo = palavra;
+            pontos = 0;
+            rimasAceitas = [];
+            tempoRestante = 90;
+            
+            document.getElementById("palavra-alvo").innerText = palavraAlvo.toUpperCase();
+            document.getElementById("placar").innerText = `⭐ Pontos: ${pontos}`;
+            document.getElementById("box-rimas").innerText = "Aguardando rimas...";
+            document.getElementById("campo-rima").value = "";
+            
+            document.getElementById("tela-selecao").style.display = "none";
+            document.getElementById("tela-jogo").style.display = "block";
+            document.getElementById("tela-fim").style.display = "none";
+            
+            document.getElementById("campo-rima").focus();
+
+            clearInterval(cronometroInterval);
+            cronometroInterval = setInterval(() => {
+                tempoRestante--;
+                document.getElementById("cronometro").innerText = `⏳ ${tempoRestante}s`;
+                
+                if (tempoRestante <= 0) {
+                    finalizarJogo();
+                }
+            }, 1000);
+        }
+
+        // Detectar o ENTER no campo de texto
+        document.getElementById("campo-rima").addEventListener("keypress", function(e) {
+            if (e.key === "Enter") {
+                const rima = this.value.trim().toLowerCase();
+                const alvoLow = palavraAlvo.toLowerCase();
+                
+                if (rima.length > 1 && rima.endsWith(alvoLow.slice(-2)) && rima !== alvoLow) {
+                    if (!rimasAceitas.includes(rima)) {
+                        rimasAceitas.push(rima);
+                        pontos += 10;
+                        document.getElementById("placar").innerText = `⭐ Pontos: ${pontos}`;
+                        document.getElementById("box-rimas").innerText = rimasAceitas.join(", ").toUpperCase();
+                    }
+                }
+                this.value = ""; // Limpa o campo
+            }
+        });
+
+        function finalizarJogo() {
+            clearInterval(cronometroInterval);
+            document.getElementById("tela-jogo").style.display = "none";
+            document.getElementById("tela-fim").style.display = "block";
+            document.getElementById("resultado-final").innerText = `🏆 Pontuação: ${pontos} pontos.`;
+        }
+
+        function voltarInicio() {
+            document.getElementById("tela-fim").style.display = "none";
+            document.getElementById("tela-selecao").style.display = "block";
+        }
+    </script>
+</body>
+</html>
